@@ -1,0 +1,41 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Backend Server",
+			"type": "shell",
+			"command": "cd MERN-RealTime-Messagers-Platform/backend; npm run dev",
+			"isBackground": true
+		},
+		{
+			"label": "Start Frontend Server",
+			"type": "shell",
+			"command": "cd MERN-RealTime-Messagers-Platform/client; npm run dev",
+			"isBackground": true
+		},
+		{
+			"label": "Backend Server",
+			"type": "shell",
+			"command": "cd MERN-RealTime-Messagers-Platform/backend; npm run dev",
+			"isBackground": true
+		},
+		{
+			"label": "Frontend Server",
+			"type": "shell",
+			"command": "cd MERN-RealTime-Messagers-Platform/client; npm run dev",
+			"isBackground": true
+		},
+		{
+			"label": "Backend Dev Server",
+			"type": "shell",
+			"command": "cd MERN-RealTime-Messagers-Platform/backend; npm run dev",
+			"isBackground": true
+		},
+		{
+			"label": "Frontend Dev Server",
+			"type": "shell",
+			"command": "cd MERN-RealTime-Messagers-Platform/client; npm run dev",
+			"isBackground": true
+		}
+	]
+}

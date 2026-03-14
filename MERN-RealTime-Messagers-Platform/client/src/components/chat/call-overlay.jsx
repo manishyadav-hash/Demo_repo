@@ -8,7 +8,7 @@ const CallOverlay = ({ status, callType, name, avatar, localVideoRef, remoteVide
     const isCalling = status === "calling";
     const isInCall = status === "in-call";
     const isVideo = callType === "video";
-    return (_jsxs("div", { className: "absolute inset-0 z-50 flex items-center justify-center", children: [_jsx("div", { className: "absolute inset-0 bg-black/40 backdrop-blur-sm" }), _jsxs("div", { className: "relative w-[min(92vw,520px)] rounded-2xl bg-card shadow-xl border border-border overflow-hidden", children: [_jsxs("div", { className: "px-5 py-4 flex items-center justify-between", children: [_jsxs("div", { children: [_jsx("p", { className: "text-sm text-muted-foreground", children: isIncoming
+    return (_jsxs("div", { className: "fixed inset-0 z-[99999] flex items-center justify-center", children: [_jsx("div", { className: "absolute inset-0 bg-black/40 backdrop-blur-sm" }), _jsxs("div", { className: "relative w-[min(92vw,520px)] rounded-2xl bg-card shadow-xl border border-border overflow-hidden", children: [_jsxs("div", { className: "px-5 py-4 flex items-center justify-between", children: [_jsxs("div", { children: [_jsx("p", { className: "text-sm text-muted-foreground", children: isIncoming
                                             ? "Incoming call"
                                             : isCalling
                                                 ? "Calling..."

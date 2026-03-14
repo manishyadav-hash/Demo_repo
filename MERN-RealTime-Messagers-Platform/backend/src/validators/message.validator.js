@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendMessageSchema = void 0;
+exports.reactToMessageSchema = exports.sendMessageSchema = void 0;
 const zod_1 = require("zod");
 exports.sendMessageSchema = zod_1.z
     .object({
@@ -16,4 +16,7 @@ exports.sendMessageSchema = zod_1.z
     .refine((data) => data.content || data.image || data.voiceData || (data.locationLatitude && data.locationLongitude), {
     message: "Either content, image, voice message, or location must be provided",
     path: ["content"],
+});
+exports.reactToMessageSchema = zod_1.z.object({
+    emoji: zod_1.z.string().trim().min(1).max(16),
 });

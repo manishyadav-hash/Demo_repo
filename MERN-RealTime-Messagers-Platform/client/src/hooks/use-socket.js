@@ -17,19 +17,34 @@ export const useSocket = create()((set, get) => ({
     activeLocations: {}, // userId -> { latitude, longitude, distance, ...}
     connectSocket: () => {
         const { socket } = get();
-        console.log(socket, "socket");
-        if (socket?.connected)
+        // Prevent creating multiple sockets if one already exists
+        if (socket) {
+            if (!socket.connected) {
+                socket.connect();
+            }
             return;
+        }
+        
+        console.log("Initializing new socket connection...");
         const newSocket = io(BASE_URL, {
             withCredentials: true,
             autoConnect: true,
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
         });
         set({ socket: newSocket });
+        
         newSocket.on("connect", () => {
-            console.log("Socket connected", newSocket.id);
+            console.log("Socket connected:", newSocket.id);
         });
+        
+        newSocket.on("disconnect", (reason) => {
+            console.log("Socket disconnected:", reason);
+        });
+
         newSocket.on("online:users", (userIds) => {
-            console.log("Online users", userIds);
+            console.log("Online users updated:", userIds);
             set({ onlineUsers: userIds });
         });
         

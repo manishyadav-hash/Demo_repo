@@ -1,10 +1,18 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import React, { useEffect } from "react";
+import React from "react";
 import AsideBar from "./aside-bar";
 import { useAutoLocationUpdate } from "@/hooks/use-auto-location-update";
+
 const AppWrapper = ({ children }) => {
-    const { isTracking } = useAutoLocationUpdate();
-    
-    return (_jsxs("div", { className: "h-full", children: [_jsx(AsideBar, {}), _jsx("main", { className: "lg:pl-10 h-full", children: children })] }));
+  useAutoLocationUpdate();
+  
+  return (
+    <div className="h-dvh min-h-svh w-full overflow-hidden bg-background">
+      <AsideBar />
+      <main className="h-full min-h-0 pl-16 transition-all duration-300">
+        {children}
+      </main>
+    </div>
+  );
 };
+
 export default AppWrapper;

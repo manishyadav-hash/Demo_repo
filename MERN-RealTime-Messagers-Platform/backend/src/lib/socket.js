@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.emitLastMessageToParticipants = exports.emitNewMessageToChatRoom = exports.emitNewChatToParticpants = exports.initializeSocket = void 0;
+exports.emitMessageReactionUpdated = exports.emitChatRemovedToParticipants = exports.emitChatSyncToParticipants = exports.emitLastMessageToParticipants = exports.emitMessagesSeen = exports.emitMessageDeleted = exports.emitNewMessageToChatRoom = exports.emitNewChatToParticpants = exports.initializeSocket = void 0;
 
 const jsonwebtoken_1 = require("jsonwebtoken");
 const jsonwebtoken_1_default = jsonwebtoken_1.default || jsonwebtoken_1;
 const socket_io_1 = require("socket.io");
 const env_config_1 = require("../config/env.config");
 const chat_service_1 = require("../services/chat.service");
+const { UserModel } = require("../models/user.model");
 
 // ========== GLOBAL STATE ==========
 // io holds the Socket.IO server instance (used across the app)
@@ -106,8 +107,11 @@ const initializeSocket = (httpServer) => {
         const userId = socket.userId;  // Get authenticated user ID
         const newSocketId = socket.id; // Unique ID for this socket connection
         
+        console.log(`[Socket] New connection: ${userId} (socketId: ${newSocketId})`);
+
         // Safety check: disconnect if authentication failed
         if (!socket.userId) {
+            console.log("[Socket] Disconnecting unauthenticated socket");
             socket.disconnect(true);
             return;
         }
@@ -116,16 +120,16 @@ const initializeSocket = (httpServer) => {
         
         // Register this user as online with their socket ID
         onlineUsers.set(userId, newSocketId);
+        console.log(`[Socket] User ${userId} is online. Total online: ${onlineUsers.size}`);
         
         // Broadcast updated online users list to ALL connected clients
-        // Array.from converts Map keys to array: [userId1, userId2, ...]
         io?.emit("online:users", Array.from(onlineUsers.keys()));
         
         // ========== ROOM MANAGEMENT ==========
         
         // Create a personal room for this user (for direct notifications)
-        // Rooms allow targeting specific users: io.to(`user:${userId}`).emit(...)
         socket.join(`user:${userId}`);
+        console.log(`[Socket] User ${userId} joined room user:${userId}`);
         
         /**
          * EVENT: "chat:join" - User opens a specific chat
@@ -158,6 +162,44 @@ const initializeSocket = (httpServer) => {
                 console.log(`User ${userId} left room chat:${chatId}`);
             }
         });
+
+            /**
+             * EVENT: "typing:start" - User started typing in a chat
+             */
+            socket.on("typing:start", async (payload) => {
+                const { chatId } = payload || {};
+                if (!chatId)
+                    return;
+                try {
+                    await (0, chat_service_1.validateChatParticipant)(chatId, userId);
+                    io?.to(`chat:${chatId}`).except(socket.id).emit("typing:start", {
+                        chatId,
+                        userId,
+                    });
+                }
+                catch (_error) {
+                    // Ignore invalid typing events silently
+                }
+            });
+
+            /**
+             * EVENT: "typing:stop" - User stopped typing in a chat
+             */
+            socket.on("typing:stop", async (payload) => {
+                const { chatId } = payload || {};
+                if (!chatId)
+                    return;
+                try {
+                    await (0, chat_service_1.validateChatParticipant)(chatId, userId);
+                    io?.to(`chat:${chatId}`).except(socket.id).emit("typing:stop", {
+                        chatId,
+                        userId,
+                    });
+                }
+                catch (_error) {
+                    // Ignore invalid typing events silently
+                }
+            });
         
         // ========== WEBRTC CALL SIGNALING ==========
         // These events facilitate peer-to-peer audio/video calls using WebRTC
@@ -167,6 +209,7 @@ const initializeSocket = (httpServer) => {
          * Helper: Send event to a specific user's personal room
          */
         const emitToUser = (targetUserId, event, payload) => {
+            console.log(`[Socket] Emitting ${event} to user:${targetUserId}`);
             io?.to(`user:${targetUserId}`).emit(event, payload);
         };
         
@@ -199,31 +242,47 @@ const initializeSocket = (httpServer) => {
          * EVENT: "call:request" - User initiates a call to another user
          * Checks if recipient is online and not already in a call
          */
-        socket.on("call:request", (payload) => {
+        socket.on("call:request", async (payload) => {
+            console.log(`[Socket] call:request from ${userId} to ${payload?.toUserId}`);
             const { toUserId, chatId, callType } = payload || {};
             
             // Validate required fields
-            if (!toUserId || !chatId)
+            if (!toUserId || !chatId) {
+                console.log("[Socket] call:request missing toUserId or chatId");
                 return;
-            
+            }
+
             // Check if recipient is online
             if (!onlineUsers.has(toUserId)) {
+                console.log(`[Socket] User ${toUserId} is offline`);
                 socket.emit("call:unavailable", { toUserId, chatId });
                 return;
             }
             
             // Check if either user is already in a call (prevent overlapping calls)
             if (activeCalls.has(userId) || activeCalls.has(toUserId)) {
+                console.log(`[Socket] User ${userId} or ${toUserId} is busy`);
                 socket.emit("call:busy", { toUserId, chatId });
                 return;
             }
             
-            // Forward call request to recipient
-            emitToUser(toUserId, "call:incoming", {
-                fromUserId: userId,
-                chatId,
-                callType,  // "audio" or "video"
-            });
+            try {
+                // Fetch caller details to display to recipient
+                console.log("[Socket] Fetching caller details for", userId);
+                const caller = await UserModel.findByPk(userId);
+                
+                console.log(`[Socket] Sending call:incoming to ${toUserId}`);
+                // Forward call request to recipient
+                emitToUser(toUserId, "call:incoming", {
+                    fromUserId: userId,
+                    callerName: caller?.name,
+                    callerAvatar: caller?.avatar,
+                    chatId,
+                    callType,  // "audio" or "video"
+                });
+            } catch (error) {
+                console.error("Error fetching caller details", error);
+            }
         });
         
         /**
@@ -536,3 +595,60 @@ const emitLastMessageToParticipants = (participantIds, chatId, lastMessage) => {
     }
 };
 exports.emitLastMessageToParticipants = emitLastMessageToParticipants;
+
+const emitChatSyncToParticipants = (participantIds = [], chat) => {
+    const io = getIO();
+    if (!chat)
+        return;
+    for (const participantId of participantIds) {
+        io.to(`user:${participantId}`).emit("chat:sync", chat);
+    }
+};
+exports.emitChatSyncToParticipants = emitChatSyncToParticipants;
+
+const emitChatRemovedToParticipants = (participantIds = [], chatId) => {
+    const io = getIO();
+    if (!chatId)
+        return;
+    for (const participantId of participantIds) {
+        io.to(`user:${participantId}`).emit("chat:removed", { chatId });
+    }
+};
+exports.emitChatRemovedToParticipants = emitChatRemovedToParticipants;
+/**
+ * EXPORTED HELPER: Broadcast message deletion to all chat room members
+ * Used by message.service.js when a user deletes a message
+ */
+const emitMessageDeleted = (chatId, messageId, deletedBy) => {
+    const io = getIO();
+    io.to(`chat:${chatId}`).emit("message:deleted", { chatId, messageId, deletedBy });
+};
+exports.emitMessageDeleted = emitMessageDeleted;
+
+const emitMessageReactionUpdated = (chatId, messageId, reactions = []) => {
+    const io = getIO();
+    if (!chatId || !messageId)
+        return;
+    io.to(`chat:${chatId}`).emit("message:reaction", {
+        chatId,
+        messageId,
+        reactions,
+    });
+};
+exports.emitMessageReactionUpdated = emitMessageReactionUpdated;
+
+/**
+ * EXPORTED HELPER: Broadcast message read receipts to chat room members
+ */
+const emitMessagesSeen = (chatId, messageIds = [], seenBy, seenAt) => {
+    const io = getIO();
+    if (!chatId || !messageIds.length)
+        return;
+    io.to(`chat:${chatId}`).emit("message:seen", {
+        chatId,
+        messageIds,
+        seenBy,
+        seenAt,
+    });
+};
+exports.emitMessagesSeen = emitMessagesSeen;

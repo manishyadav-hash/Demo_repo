@@ -1,22 +1,217 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useEffect, useState } from "react";
 import { getOtherUserAndGroup } from "@/lib/helper";
 import { PROTECTED_ROUTES } from "@/routes/routes";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Info, LogOut, MoreVertical, UserPlus, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AvatarWithBadge from "../avatar-with-badge";
 import CallMenu from "./call-menu";
-import UserDistanceBadge from "./user-distance-badge";
-import LocationDetailsPanel from "./location-details-panel";
-import LocationPermissionPrompt from "./location-permission-prompt";
-const ChatHeader = ({ chat, currentUserId, onVoiceCall, onVideoCall, }) => {
+import { AddMemberPopover } from "./add-member-popover";
+import { Button } from "@/components/ui/button";
+import LiveLocationPanel from "./live-location-panel";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import GroupInfoPanel from "./group-info-panel";
+
+const ChatHeader = ({
+    chat,
+    currentUserId,
+    onVoiceCall,
+    onVideoCall,
+    onExitGroup,
+    isLeavingGroup = false,
+    typingText = "",
+}) => {
     const navigate = useNavigate();
-    const { name, subheading, avatar, isOnline, isGroup } = getOtherUserAndGroup(chat, currentUserId);
-    const otherUser = chat?.participants?.find((participant) => participant?._id !== currentUserId);
-    return (_jsxs("div", { className: "sticky top-0 z-50 space-y-2 bg-card border-b border-border", children: [_jsxs("div", { className: "flex items-center gap-4 border-b border-border px-2", children: [_jsxs("div", { className: "h-14 px-4 flex items-center shrink-0", children: [_jsx("div", { children: _jsx(ArrowLeft, { className: "w-5 h-5 inline-block lg:hidden\r\n          text-muted-foreground cursor-pointer\r\n          mr-2\r\n          ", onClick: () => navigate(PROTECTED_ROUTES.CHAT) }) }), _jsx(AvatarWithBadge, { name: name, src: avatar, isGroup: isGroup, isOnline: isOnline }), _jsxs("div", { className: "ml-2 flex flex-col", children: [_jsx("h5", { className: "font-semibold", children: name }), _jsx("p", { className: `text-sm ${isOnline ? "text-green-500" : "text-muted-foreground"}`, children: subheading }), !isGroup && otherUser?._id && (_jsx(UserDistanceBadge, { otherUserId: otherUser._id, currentUserId: currentUserId }))] })] }), _jsx("div", { className: "flex-1", children: _jsx("div", { className: `text-center
-            py-4 h-full
-            border-b-2
-            border-primary
-            font-medium
-            text-primary`, children: "Chat" }) }), _jsx("div", { className: "pr-2", children: _jsx(CallMenu, { name: name, disabled: isGroup, onVoiceCall: onVoiceCall, onVideoCall: onVideoCall }) })] }), _jsx("div", { className: "px-4 py-2", children: _jsx(LocationPermissionPrompt, {}) }), !isGroup && otherUser?._id && (_jsx("div", { className: "px-4 pb-2", children: _jsx(LocationDetailsPanel, { otherUserId: otherUser._id, currentUserId: currentUserId }) }))] }));
+    const [typingDots, setTypingDots] = useState(0);
+    const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
+    const [isLocationOpen, setIsLocationOpen] = useState(false);
+
+    const { name, subheading, avatar, isOnline, isGroup } = getOtherUserAndGroup(
+        chat,
+        currentUserId
+    );
+
+    const otherUser = chat?.participants?.find(
+        (participant) => participant?._id !== currentUserId
+    );
+
+    useEffect(() => {
+        if (!typingText) {
+            setTypingDots(0);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            setTypingDots((prev) => (prev + 1) % 4);
+        }, 350);
+
+        return () => clearInterval(interval);
+    }, [typingText]);
+
+    useEffect(() => {
+        setIsGroupInfoOpen(false);
+        setIsLocationOpen(false);
+    }, [chat?._id]);
+
+    const handleExitGroup = async () => {
+        const confirmed = window.confirm(`Exit ${name}?`);
+        if (!confirmed) return;
+        await onExitGroup?.();
+    };
+
+    return (
+        <>
+            <div className="sticky top-0 z-50 space-y-2 border-b border-border bg-card/95 backdrop-blur-md">
+                <div className="flex items-center justify-between gap-3 px-3 py-3 sm:px-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="rounded-full lg:hidden"
+                            onClick={() => navigate(PROTECTED_ROUTES.CHAT)}
+                            aria-label="Back to chats"
+                        >
+                            <ArrowLeft className="h-5 w-5 text-muted-foreground" />
+                        </Button>
+
+                        <button
+                            type="button"
+                            className="flex min-w-0 items-center gap-3 text-left"
+                            onClick={() => isGroup && setIsGroupInfoOpen(true)}
+                        >
+                            <AvatarWithBadge
+                                name={name}
+                                src={avatar}
+                                isGroup={isGroup}
+                                isOnline={isOnline}
+                                size="h-11 w-11"
+                            />
+                            <div className="min-w-0">
+                                <h5 className="truncate text-sm font-semibold text-foreground sm:text-base">
+                                    {name}
+                                </h5>
+                                <p
+                                    className={`truncate text-xs sm:text-sm ${
+                                        typingText
+                                            ? "text-primary"
+                                            : isOnline
+                                                ? "text-green-500"
+                                                : "text-muted-foreground"
+                                    }`}
+                                >
+                                    {typingText ? (
+                                        <span className="inline-flex items-center gap-1 transition-opacity duration-200">
+                                            {typingText}
+                                            <span className="inline-block min-w-4 text-left">{".".repeat(typingDots)}</span>
+                                        </span>
+                                    ) : (
+                                        subheading
+                                    )}
+                                </p>
+
+                            </div>
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-1 sm:gap-2">
+                        {isGroup ? (
+                            <>
+                                <AddMemberPopover
+                                    chatId={chat?._id}
+                                    currentMembers={chat?.participants || []}
+                                >
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        className="rounded-full"
+                                        aria-label="Add member"
+                                    >
+                                        <UserPlus className="h-5 w-5 text-muted-foreground" />
+                                    </Button>
+                                </AddMemberPopover>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="ghost"
+                                            className="rounded-full"
+                                            aria-label="Open group menu"
+                                        >
+                                            <MoreVertical className="h-5 w-5 text-muted-foreground" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                        <DropdownMenuItem onClick={() => setIsGroupInfoOpen(true)}>
+                                            <Info className="h-4 w-4" />
+                                            Group info
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleExitGroup} variant="destructive">
+                                            <LogOut className="h-4 w-4" />
+                                            Exit group
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </>
+                        ) : (
+                            <>
+                                {otherUser?._id && (
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        className={`rounded-full transition-colors ${
+                                            isLocationOpen
+                                                ? "bg-violet-500/20 text-violet-400 hover:bg-violet-500/30"
+                                                : "text-muted-foreground"
+                                        }`}
+                                        onClick={() => setIsLocationOpen((v) => !v)}
+                                        aria-label="Toggle live location"
+                                    >
+                                        <MapPin className="h-5 w-5" />
+                                    </Button>
+                                )}
+                                <CallMenu
+                                    name={name}
+                                    disabled={false}
+                                    onVoiceCall={onVoiceCall}
+                                    onVideoCall={onVideoCall}
+                                />
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {!isGroup && isLocationOpen && otherUser?._id && (
+                    <LiveLocationPanel
+                        otherUserId={otherUser._id}
+                        currentUserId={currentUserId}
+                        otherUserName={name}
+                        onClose={() => setIsLocationOpen(false)}
+                    />
+                )}
+
+            </div>
+
+            {isGroup && (
+                <GroupInfoPanel
+                    chat={chat}
+                    currentUserId={currentUserId}
+                    open={isGroupInfoOpen}
+                    onClose={() => setIsGroupInfoOpen(false)}
+                    onExitGroup={handleExitGroup}
+                    isLeavingGroup={isLeavingGroup}
+                />
+            )}
+        </>
+    );
 };
+
 export default ChatHeader;

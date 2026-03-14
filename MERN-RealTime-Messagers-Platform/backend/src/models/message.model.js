@@ -67,6 +67,20 @@ MessageModel.init({
             key: "id",
         },
     },
+    seenAt: {
+        type: sequelize_1.DataTypes.DATE,
+        allowNull: true,
+    },
+    seenBy: {
+        type: sequelize_1.DataTypes.JSONB,
+        allowNull: false,
+        defaultValue: [],
+    },
+    reactions: {
+        type: sequelize_1.DataTypes.JSONB,
+        allowNull: false,
+        defaultValue: [],
+    },
     createdAt: sequelize_1.DataTypes.DATE,
     updatedAt: sequelize_1.DataTypes.DATE,
 }, {

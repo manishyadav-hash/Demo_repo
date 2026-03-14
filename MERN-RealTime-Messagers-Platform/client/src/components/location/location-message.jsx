@@ -94,24 +94,24 @@ export const LocationMessage = ({
         : "Distance unavailable";
 
     return (
-        <Card className={`overflow-hidden max-w-sm bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-800 ${className}`}>
-            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-blue-100 dark:border-blue-800/60 bg-white/70 dark:bg-gray-900/40">
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 dark:text-blue-300">
-                    <MapPin className="w-4 h-4" />
+        <Card className={`overflow-hidden w-full max-w-[280px] sm:max-w-sm bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-800 ${className}`}>
+            <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-blue-100 dark:border-blue-800/60 bg-white/70 dark:bg-gray-900/40 sm:px-4 sm:py-3">
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 sm:gap-2 sm:text-sm flex-shrink-0">
+                    <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                     <span>Location Shared</span>
                 </div>
                 {user ? (
-                    <div className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold ${distanceKm !== null ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200" : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"}`}>
-                        <Ruler className="w-3.5 h-3.5" />
-                        <span>{distanceLabel}</span>
+                    <div className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold min-w-0 flex-shrink sm:px-2.5 sm:py-1 sm:text-xs sm:gap-1.5 ${distanceKm !== null ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200" : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"}`}>
+                        <Ruler className="w-3 h-3 flex-shrink-0 sm:w-3.5 sm:h-3.5" />
+                        <span className="truncate">{distanceLabel}</span>
                     </div>
                 ) : (
                     <Link
                         to={AUTH_ROUTES.SIGN_IN}
-                        className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold min-w-0 flex-shrink bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors sm:px-2.5 sm:py-1 sm:text-xs sm:gap-1.5"
                     >
-                        <Lock className="w-3.5 h-3.5" />
-                        <span>{distanceLabel}</span>
+                        <Lock className="w-3 h-3 flex-shrink-0 sm:w-3.5 sm:h-3.5" />
+                        <span className="truncate">{distanceLabel}</span>
                     </Link>
                 )}
             </div>
@@ -129,29 +129,29 @@ export const LocationMessage = ({
             </div>
 
             {/* Location Info */}
-            <div className="p-4 space-y-3">
+            <div className="p-3 space-y-2.5 sm:p-4 sm:space-y-3">
                 {address && (
-                    <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                    <div className="flex items-start gap-1.5 sm:gap-2">
+                        <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-2 sm:text-sm">
                             {address}
                         </p>
                     </div>
                 )}
                 
-                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1.5 rounded">
-                    <span className="font-mono">{lat.toFixed(6)}</span>
-                    <span>, </span>
-                    <span className="font-mono">{lon.toFixed(6)}</span>
+                <div className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1.5 rounded overflow-hidden sm:gap-2 sm:text-xs">
+                    <span className="font-mono truncate">{lat.toFixed(6)}</span>
+                    <span className="flex-shrink-0">,</span>
+                    <span className="font-mono truncate">{lon.toFixed(6)}</span>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 sm:gap-2">
                     <Button
                         onClick={openInMaps}
                         size="sm"
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 h-8 text-xs sm:h-9 sm:text-sm"
                     >
                         <ExternalLink className="w-3 h-3 mr-1" />
                         Open Map
@@ -159,7 +159,7 @@ export const LocationMessage = ({
                     <Button
                         onClick={getDirections}
                         size="sm"
-                        className="flex-1"
+                        className="flex-1 h-8 text-xs sm:h-9 sm:text-sm"
                     >
                         <Navigation className="w-3 h-3 mr-1" />
                         Directions

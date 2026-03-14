@@ -4,8 +4,9 @@ import { MapPin, X, Send } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { useLocation } from "../../hooks/use-location";
 import { Spinner } from "../ui/spinner";
+import { cn } from "@/lib/utils";
 
-export const LocationSendButton = ({ onSendLocation, disabled }) => {
+export const LocationSendButton = ({ onSendLocation, disabled, buttonClassName = "", iconClassName = "" }) => {
     const [open, setOpen] = useState(false);
     const {
         location,
@@ -60,10 +61,10 @@ export const LocationSendButton = ({ onSendLocation, disabled }) => {
                     variant="outline"
                     size="icon"
                     disabled={disabled}
-                    className="rounded-full"
+                    className={cn("rounded-full h-8 w-8 sm:h-9 sm:w-9", buttonClassName)}
                     title="Send Location"
                 >
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4", iconClassName)} />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80" align="start">

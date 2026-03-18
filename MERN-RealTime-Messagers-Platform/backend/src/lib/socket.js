@@ -34,8 +34,11 @@ const initializeSocket = (httpServer) => {
                 // Allows frontend to establish WebSocket connections from different origins
                 const allowedPatterns = [
                     /^http:\/\/localhost:\d+$/,
+                    /^https:\/\/localhost:\d+$/,
                     /^http:\/\/127\.0\.0\.1:\d+$/,
+                    /^https:\/\/127\.0\.0\.1:\d+$/,
                     /^http:\/\/\d+\.\d+\.\d+\.\d+:\d+$/, // Allow any local IP with any port
+                    /^https:\/\/\d+\.\d+\.\d+\.\d+:\d+$/, // Allow any local IP with any port over HTTPS
                 ];
                 if (!origin || allowedPatterns.some(pattern => pattern.test(origin))) {
                     callback(null, true);
@@ -95,6 +98,10 @@ const initializeSocket = (httpServer) => {
             next(); // Allow connection to proceed
         }
         catch (error) {
+            if (error?.name === "TokenExpiredError" || error?.name === "JsonWebTokenError") {
+                return next(new Error("Unauthorized"));
+            }
+
             next(new Error("Internal server error"));
         }
     });
@@ -595,6 +602,23 @@ const emitLastMessageToParticipants = (participantIds, chatId, lastMessage) => {
     }
 };
 exports.emitLastMessageToParticipants = emitLastMessageToParticipants;
+
+const emitMessageNotificationToParticipants = (participantIds = [], senderId, chatId, message) => {
+    const io = getIO();
+    if (!chatId || !message)
+        return;
+
+    for (const participantId of participantIds) {
+        if (!participantId || participantId === senderId)
+            continue;
+
+        io.to(`user:${participantId}`).emit("message:notify", {
+            chatId,
+            message,
+        });
+    }
+};
+exports.emitMessageNotificationToParticipants = emitMessageNotificationToParticipants;
 
 const emitChatSyncToParticipants = (participantIds = [], chat) => {
     const io = getIO();

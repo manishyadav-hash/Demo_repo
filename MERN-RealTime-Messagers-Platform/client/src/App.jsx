@@ -7,6 +7,7 @@ import Logo from "./components/logo";
 import { useLocation } from "react-router-dom";
 import { isAuthRoute } from "./routes/routes";
 import CallProvider from "@/context/call-context";
+import GlobalMessageNotifications from "@/components/global-message-notifications";
 
 function App() {
     const { pathname } = useLocation();
@@ -20,6 +21,6 @@ function App() {
     if (isAuthStatusLoading && !user) {
         return (_jsxs("div", { className: "flex min-h-svh h-dvh flex-col items-center\r\n       justify-center\r\n      ", children: [_jsx(Logo, { imgClass: "size-20", showText: false }), _jsx(Spinner, { className: "w-6 h-6" })] }));
     }
-    return (_jsx(CallProvider, { children: _jsx(AppRoutes, {}) }));
+    return (_jsxs(CallProvider, { children: [_jsx(GlobalMessageNotifications, {}), _jsx(AppRoutes, {})] }));
 }
 export default App;

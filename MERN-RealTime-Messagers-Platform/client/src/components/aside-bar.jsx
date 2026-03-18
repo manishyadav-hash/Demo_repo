@@ -22,17 +22,17 @@ const AsideBar = () => {
   const isOnline = isUserOnline(user?._id);
 
   return (
-    <aside className="fixed top-2 bottom-2 w-12 left-2 z-[9999] rounded-2xl bg-card/60 backdrop-blur-md border border-white/10 shadow-lg flex flex-col items-center py-4 transition-all hover:bg-card/80">
+    <aside className="fixed left-1 top-1 bottom-1 z-[9999] flex w-10 flex-col items-center rounded-2xl border border-white/10 bg-card/60 py-3 shadow-lg backdrop-blur-md transition-all hover:bg-card/80 sm:left-2 sm:top-2 sm:bottom-2 sm:w-12 sm:py-4">
       <div className="w-full flex-1 flex flex-col items-center justify-between">
         <div className="glow-effect rounded-full">
           <Logo url={PROTECTED_ROUTES.CHAT} imgClass="size-8 transition-transform hover:scale-110" textClass="hidden" showText={false} />
         </div>
         
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-3 sm:gap-4">
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full hover:bg-primary/20 hover:text-primary transition-colors h-10 w-10"
+            className="h-8 w-8 rounded-full transition-colors hover:bg-primary/20 hover:text-primary sm:h-10 sm:w-10"
             onClick={() => setTheme(theme === "light" ? "dark" : "light")}
           >
             <Sun className="h-5 w-5 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />

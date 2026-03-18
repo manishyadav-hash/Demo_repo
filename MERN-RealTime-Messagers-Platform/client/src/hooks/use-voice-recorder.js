@@ -53,6 +53,7 @@ export const useVoiceRecorder = () => {
                     audioChunksRef.current.push(event.data);
                 }
             };
+            
             mediaRecorder.onstop = () => {
                 if (timerIntervalRef.current) {
                     clearInterval(timerIntervalRef.current);

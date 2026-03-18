@@ -8,7 +8,7 @@ const AppWrapper = ({ children }) => {
   return (
     <div className="h-dvh min-h-svh w-full overflow-hidden bg-background">
       <AsideBar />
-      <main className="h-full min-h-0 pl-16 transition-all duration-300">
+      <main className="h-full min-h-0 pl-11 sm:pl-16 transition-all duration-300">
         {children}
       </main>
     </div>

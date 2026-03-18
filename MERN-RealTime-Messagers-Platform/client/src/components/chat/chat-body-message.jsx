@@ -182,7 +182,12 @@ const ChatMessageBody = memo(({ message, onReply, isGroup = false }) => {
         setCurrentTime(0);
     };
 
-    const containerClass = cn("group flex gap-2 px-3 py-1 first:mt-1 sm:px-4 sm:py-2.5 sm:first:mt-2", isCurrentUser && "flex-row-reverse text-left");
+    const containerClass = cn(
+        "group flex gap-2 py-1 first:mt-1 sm:py-2.5 sm:first:mt-2",
+        isCurrentUser
+            ? "flex-row-reverse pl-4 pr-1 text-left sm:pl-10 sm:pr-3"
+            : "pl-1 pr-4 sm:pl-3 sm:pr-10"
+    );
     const contentWrapperClass = cn(
         "relative flex flex-col pt-4 md:pt-0",
         (hasImage || hasLocation) ? "max-w-[85%] sm:max-w-[72%]" : "max-w-[70%]",

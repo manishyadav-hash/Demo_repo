@@ -71,6 +71,7 @@ app.use((0, cors_1_default)({
             /^https:\/\/.*\.ngrok-free\.dev$/,    // https://xxx.ngrok-free.dev
             /^https:\/\/.*\.ngrok\.io$/,          // https://xxx.ngrok.io
             /^https:\/\/.*\.trycloudflare\.com$/, // https://xxx.trycloudflare.com
+            /^http:\/\/10\.165\.98\.253:\d+$/ // http://10.165.98.253:5177
         ];
         
         // If no origin (same-origin) or matches allowed pattern, allow the request

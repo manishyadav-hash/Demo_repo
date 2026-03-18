@@ -22,7 +22,7 @@ Created as a backend runtime image:
 1. Uses `node:20-alpine`
 2. Installs production dependencies with `npm ci --omit=dev`
 3. Copies backend source
-4. Exposes port `3001`
+4. Exposes port `3001` 
 5. Starts with `npm start`
 
 ### `client/Dockerfile` + `client/nginx.conf`

@@ -21,24 +21,28 @@ const sendMessageService = async (userId, body) => {
         if (!replyMessage)
             throw new app_error_1.NotFoundException("Reply message not found");
     }
+    
     let imageUrl;
     // Store image as base64 data URL (no Cloudinary needed)
     if (image) {
         imageUrl = image;
     }
     let voiceUrl_processed = voiceData || null;
+
     const newMessage = await models_1.MessageModel.create({
         chatId,
         senderId: userId,
         content,
         image: imageUrl,
         voiceUrl: voiceUrl_processed,
-        locationLatitude: locationLatitude || null,
+        locationLatitude: locationLatitude || null,     
         locationLongitude: locationLongitude || null,
         locationAddress: locationAddress || null,
         replyToId: replyToId || null,
     });
+
     await chat.update({ lastMessageId: newMessage.id });
+
     const populatedMessage = await models_1.MessageModel.findByPk(newMessage.id, {
         include: [
             { model: models_1.ChatModel, as: "chat" },
@@ -61,6 +65,7 @@ const sendMessageService = async (userId, body) => {
             },
         ],
     });
+
     //websocket emit the new Message to the chat room
     (0, socket_1.emitNewMessageToChatRoom)(userId, chatId, populatedMessage || newMessage);
     //websocket emit the lastmessage to members (personnal room user)
@@ -69,15 +74,19 @@ const sendMessageService = async (userId, body) => {
         where: { chatId },
         raw: true,
     });
+
     
     const allParticipantIds = allParticipants.map((p) => p.userId);
     (0, socket_1.emitLastMessageToParticipants)(allParticipantIds, chatId, populatedMessage || newMessage);
+    (0, socket_1.emitMessageNotificationToParticipants)(allParticipantIds, userId, chatId, populatedMessage || newMessage);
     return {
         userMessage: populatedMessage || newMessage,
         chat,
     };
 };
 exports.sendMessageService = sendMessageService;
+
+
 const deleteMessageService = async (messageId, userId) => {
     const message = await models_1.MessageModel.findByPk(messageId);
     if (!message)
@@ -108,6 +117,7 @@ const deleteMessageService = async (messageId, userId) => {
     return { messageId, chatId };
 };
 exports.deleteMessageService = deleteMessageService;
+
 
 const reactToMessageService = async (messageId, userId, emoji) => {
     const message = await models_1.MessageModel.findByPk(messageId);
@@ -161,6 +171,8 @@ const reactToMessageService = async (messageId, userId, emoji) => {
             reactedAt: new Date().toISOString(),
         });
     }
+
+  
 
     await message.update({ reactions: nextReactions });
     (0, socket_1.emitMessageReactionUpdated)(chatId, message.id, nextReactions);

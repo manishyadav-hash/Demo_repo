@@ -8,7 +8,7 @@ const AppLayout = () => {
   const chatId = useChatId();
   return (
     <AppWrapper>
-      <div className="flex h-full min-h-0 flex-col gap-3 p-2 sm:gap-4 sm:p-4">
+      <div className="flex h-full min-h-0 flex-col gap-1 p-1 sm:gap-4 sm:p-4">
         <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-2xl sm:rounded-3xl glass-panel">
           <div className={cn(
             "min-h-0 shrink-0 transition-all duration-300",

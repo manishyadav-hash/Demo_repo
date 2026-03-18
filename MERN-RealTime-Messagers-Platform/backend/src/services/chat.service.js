@@ -36,6 +36,7 @@ const hasUserSeenMessage = (message, userId) => {
     return receipts.some((receipt) => receipt?.userId === userId);
 };
 
+
 const addSeenReceipt = (message, userId, seenAt) => {
     const currentReceipts = Array.isArray(message?.seenBy) ? message.seenBy : [];
     if (currentReceipts.some((receipt) => receipt?.userId === userId)) {
@@ -49,6 +50,7 @@ const addSeenReceipt = (message, userId, seenAt) => {
         },
     ];
 };
+
 
 const createChatService = async (userId, body) => {
     const { participantId, isGroup, participants, groupName } = body;
@@ -77,7 +79,7 @@ const createChatService = async (userId, body) => {
             throw new app_error_1.BadRequestException("You cannot create a chat with yourself");
         }
         const otherUser = await models_1.UserModel.findByPk(participantId);
-        if (!otherUser)
+        if (!otherUser) 
             throw new app_error_1.NotFoundException("User not found");
         allParticipantIds = [userId, participantId];
         const matchingChatIds = await models_1.ChatParticipantModel.findAll({
@@ -127,11 +129,14 @@ const getUserChatsService = async (userId) => {
         raw: true,
     });
 
+
+
     const chatIds = [...new Set(chatLinks.map((link) => link.chatId))];
     if (!chatIds.length)
         return [];
     const chats = await models_1.ChatModel.findAll({
         where: { id: { [sequelize_1.Op.in]: chatIds } },
+
         include: [
             {
                 model: models_1.UserModel,
@@ -156,6 +161,7 @@ const getUserChatsService = async (userId) => {
     return chats;
 };
 exports.getUserChatsService = getUserChatsService;
+
 const addMembersService = async (requesterId, chatId, newParticipantIds) => {
     const chat = await models_1.ChatModel.findByPk(chatId);
     if (!chat) {
@@ -170,14 +176,18 @@ const addMembersService = async (requesterId, chatId, newParticipantIds) => {
     if (!isMember) {
         throw new app_error_1.ForbiddenException("You must be a member of the group to add others");
     }
+
     const existingParticipants = await models_1.ChatParticipantModel.findAll({
         where: {
             chatId,
             userId: { [sequelize_1.Op.in]: newParticipantIds },
         },
     });
+    
+    
     const existingIds = new Set(existingParticipants.map((p) => p.userId));
     const idsToAdd = newParticipantIds.filter((id) => !existingIds.has(id));
+
     if (idsToAdd.length === 0) {
         throw new app_error_1.BadRequestException("All selected users are already in the group");
     }
@@ -185,11 +195,13 @@ const addMembersService = async (requesterId, chatId, newParticipantIds) => {
         where: { id: { [sequelize_1.Op.in]: idsToAdd } },
         attributes: ["id", "name", "avatar"],
     });
+
     const validIdsToAdd = validUsers.map((u) => u.id);
     const participantsPayload = validIdsToAdd.map((userId) => ({
         chatId,
         userId,
     }));
+
     await models_1.ChatParticipantModel.bulkCreate(participantsPayload);
     const requester = await models_1.UserModel.findByPk(requesterId, { attributes: ["name"] });
     const addedNames = validUsers.map((u) => u.name).join(", ");
@@ -210,6 +222,8 @@ const addMembersService = async (requesterId, chatId, newParticipantIds) => {
         ],
     });
 
+
+
     await chat.update({ lastMessageId: systemMessage.id });
     
     // Notify existing room members (except requester)
@@ -227,6 +241,7 @@ const addMembersService = async (requesterId, chatId, newParticipantIds) => {
         chat: syncedChat,
     };
 };
+
 exports.addMembersService = addMembersService;
 
 
@@ -247,6 +262,7 @@ const getSingleChatService = async (chatId, userId) => {
             },
         ],
     });
+
     if (!chat) {
         throw new app_error_1.BadRequestException("Chat not found or you are not authorized to view this chat");
     }
@@ -273,6 +289,7 @@ const getSingleChatService = async (chatId, userId) => {
         ],
         order: [["createdAt", "ASC"]],
     });
+
 
     const unreadMessages = messages.filter((msg) => msg.senderId !== userId && !hasUserSeenMessage(msg, userId));
 
@@ -326,6 +343,7 @@ const markChatMessagesSeenService = async (chatId, userId) => {
             senderId: { [sequelize_1.Op.ne]: userId },
         },
     });
+    
 
     const unreadMessages = unseenMessages.filter((message) => !hasUserSeenMessage(message, userId));
     const seenMessageIds = unreadMessages.map((message) => message.id);
@@ -349,14 +367,19 @@ const deleteDirectChatService = async (chatId, userId) => {
     const membership = await models_1.ChatParticipantModel.findOne({
         where: { chatId, userId },
     });
+
     if (!membership) {
         throw new app_error_1.BadRequestException("Chat not found or unauthorized");
     }
+    
+    
 
     const chat = await models_1.ChatModel.findByPk(chatId);
     if (!chat) {
         throw new app_error_1.NotFoundException("Chat not found");
     }
+
+
     if (chat.isGroup) {
         throw new app_error_1.BadRequestException("Group chats cannot be deleted from this action");
     }
@@ -370,7 +393,9 @@ const deleteDirectChatService = async (chatId, userId) => {
     }
 
     return { chatId };
+
 };
+
 exports.deleteDirectChatService = deleteDirectChatService;
 
 const leaveGroupService = async (chatId, userId) => {
@@ -382,6 +407,7 @@ const leaveGroupService = async (chatId, userId) => {
     }
 
     const chat = await models_1.ChatModel.findByPk(chatId);
+    
     if (!chat) {
         throw new app_error_1.NotFoundException("Chat not found");
     }
@@ -393,13 +419,17 @@ const leaveGroupService = async (chatId, userId) => {
         attributes: ["id", "name", "avatar"],
     });
 
+
     await models_1.ChatParticipantModel.destroy({ where: { chatId, userId } });
 
     const remainingParticipants = await models_1.ChatParticipantModel.findAll({
         attributes: ["userId"],
         where: { chatId },
         raw: true,
+       
     });
+    
+
     const remainingParticipantIds = remainingParticipants.map((participant) => participant.userId);
 
     if (remainingParticipantIds.length === 0) {
@@ -426,10 +456,12 @@ const leaveGroupService = async (chatId, userId) => {
                 as: "sender",
                 attributes: ["id", "name", "avatar"],
             },
+            
         ],
     });
 
     await chat.update({ lastMessageId: systemMessage.id });
+
 
     const syncedChat = await getChatWithParticipantsById(chatId);
     (0, socket_1.emitNewMessageToChatRoom)(userId, chatId, systemMessage);

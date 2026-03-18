@@ -24,3 +24,4 @@ ChatParticipantModel.init({
 });
 
 exports.default = ChatParticipantModel;
+

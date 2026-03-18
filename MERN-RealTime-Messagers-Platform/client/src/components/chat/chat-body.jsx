@@ -2,19 +2,14 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useChat } from "@/hooks/use-chat";
 import { useSocket } from "@/hooks/use-socket";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import ChatBodyMessage from "./chat-body-message";
-import NotificationToast from "@/components/notification-toast";
-import { playReceiveSound, primeChatSounds } from "@/lib/chat-sounds";
+
 const ChatBody = ({ chatId, messages, onReply, isGroup = false }) => {
     const { socket } = useSocket();
     const { addNewMessage, removeMessage, markChatAsRead, applyMessagesSeen, updateMessageReaction } = useChat();
     const { user: currentUser } = useAuth();
     const bottomRef = useRef(null);
-    const [notification, setNotification] = useState(null);
-    useEffect(() => {
-        primeChatSounds();
-    }, []);
     useEffect(() => {
         if (!chatId)
             return;
@@ -22,15 +17,7 @@ const ChatBody = ({ chatId, messages, onReply, isGroup = false }) => {
             return;
         const handleNewMessage = (msg) => {
             addNewMessage(chatId, msg);
-            // Show notification only if message is from another user
             if (msg.senderId !== currentUser?._id) {
-                playReceiveSound();
-                setNotification({
-                    id: msg._id,
-                    message: msg.content || msg.message || msg.text || "📎 Shared a location",
-                    senderName: msg.senderName || msg.sender?.name || "Unknown",
-                    senderAvatar: msg.senderAvatar || msg.sender?.avatar || null
-                });
                 markChatAsRead(chatId);
             }
         };
@@ -83,6 +70,15 @@ const ChatBody = ({ chatId, messages, onReply, isGroup = false }) => {
             behavior: "smooth",
         });
     }, [messages]);
-    return (_jsxs("div", { className: "mx-auto flex w-full max-w-6xl flex-col px-2.5 pt-3 pb-2 sm:px-3 sm:pt-4", children: [notification && (_jsx(NotificationToast, { message: notification.message, senderName: notification.senderName, senderAvatar: notification.senderAvatar, onDismiss: () => setNotification(null) })), messages.map((message) => (_jsx(ChatBodyMessage, { message: message, onReply: onReply, isGroup: isGroup }, message._id))), _jsx("div", { ref: bottomRef })] }));
+    return (_jsxs("div", { className: "mx-auto flex w-full max-w-6xl flex-col px-2.5 pt-3 pb-2 sm:px-3 sm:pt-4", children: [messages.map((message, index) => {
+                const previousMessage = messages[index - 1];
+                const sameSenderAsPrevious = previousMessage?.sender?._id === message?.sender?._id;
+                const spacingClass = index === 0
+                    ? ""
+                    : sameSenderAsPrevious
+                        ? "mt-1 sm:mt-1.5"
+                        : "mt-3 sm:mt-4";
+                return (_jsx("div", { className: spacingClass, children: _jsx(ChatBodyMessage, { message: message, onReply: onReply, isGroup: isGroup }) }, message._id));
+            }), _jsx("div", { ref: bottomRef })] }));
 };
 export default ChatBody;

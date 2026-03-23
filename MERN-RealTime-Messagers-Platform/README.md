@@ -49,7 +49,7 @@ If you love this project and want to support future ones:
 
 ---
 
-## 📘 Documentation (Basic to Advanced)
+## 📘 Documentation (Basic to Advanced),
 
 ### 1) Beginner Overview (What the app does)
 Spark is a real-time messaging app. Users can sign up, log in, chat in real time, share images/voice notes, and make audio/video calls. It works like WhatsApp or Messenger but is built with React (frontend) and Node.js (backend).
@@ -109,7 +109,7 @@ Spark is a real-time messaging app. Users can sign up, log in, chat in real time
 
 ## 🗄️ Database (PostgreSQL)
 
-### Main Tables
+### Main Tables,
 
 **users**
 - `id` (UUID, primary key)

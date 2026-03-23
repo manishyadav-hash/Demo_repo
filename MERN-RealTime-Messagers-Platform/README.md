@@ -109,7 +109,7 @@ Spark is a real-time messaging app. Users can sign up, log in, chat in real time
 
 ## 🗄️ Database (PostgreSQL)
 
-### Main Tables,
+### Main Tables
 
 **users**
 - `id` (UUID, primary key)

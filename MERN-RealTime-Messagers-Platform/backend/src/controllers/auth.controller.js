@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authStatusController = exports.logoutController = exports.loginController = exports.registerController = void 0;
+exports.authStatusController = exports.logoutController = exports.verifyPhoneOtpController = exports.sendPhoneOtpController = exports.loginController = exports.registerController = void 0;
 const asyncHandler_middleware_1 = require("../middlewares/asyncHandler.middleware");
 const auth_validator_1 = require("../validators/auth.validator");
 const auth_service_1 = require("../services/auth.service");
@@ -34,6 +34,30 @@ exports.loginController = (0, asyncHandler_middleware_1.asyncHandler)(async (req
         .status(http_config_1.HTTPSTATUS.OK)
         .json({
         message: "User login successfully",
+        user,
+    });
+});
+
+exports.sendPhoneOtpController = (0, asyncHandler_middleware_1.asyncHandler)(async (req, res) => {
+    const body = auth_validator_1.sendPhoneOtpSchema.parse(req.body);
+    const response = await (0, auth_service_1.sendPhoneOtpService)(body);
+    return res.status(http_config_1.HTTPSTATUS.OK).json({
+        message: "OTP sent successfully",
+        notification: `Your OTP is ${response.otp}`,
+        phoneNumber: response.phoneNumber,
+    });
+});
+
+exports.verifyPhoneOtpController = (0, asyncHandler_middleware_1.asyncHandler)(async (req, res) => {
+    const body = auth_validator_1.verifyPhoneOtpSchema.parse(req.body);
+    const user = await (0, auth_service_1.verifyPhoneOtpService)(body);
+    return (0, cookie_1.setJwtAuthCookie)({
+        res,
+        userId: user.id,
+    })
+        .status(http_config_1.HTTPSTATUS.OK)
+        .json({
+        message: "OTP verified and login successful",
         user,
     });
 });

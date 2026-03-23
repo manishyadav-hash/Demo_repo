@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reactToMessageService = exports.deleteMessageService = exports.sendMessageService = void 0;
+const sequelize_1 = require("sequelize");
 const models_1 = require("../models");
 const app_error_1 = require("../utils/app-error");
 const socket_1 = require("../lib/socket");
+const firebase_service_1 = require("./firebase.service");
 const sendMessageService = async (userId, body) => {
     const { chatId, content, image, voiceData, replyToId, locationLatitude, locationLongitude, locationAddress } = body;
     const chat = await models_1.ChatModel.findByPk(chatId);
@@ -21,7 +23,7 @@ const sendMessageService = async (userId, body) => {
         if (!replyMessage)
             throw new app_error_1.NotFoundException("Reply message not found");
     }
-    
+
     let imageUrl;
     // Store image as base64 data URL (no Cloudinary needed)
     if (image) {
@@ -35,7 +37,7 @@ const sendMessageService = async (userId, body) => {
         content,
         image: imageUrl,
         voiceUrl: voiceUrl_processed,
-        locationLatitude: locationLatitude || null,     
+        locationLatitude: locationLatitude || null,
         locationLongitude: locationLongitude || null,
         locationAddress: locationAddress || null,
         replyToId: replyToId || null,
@@ -75,10 +77,59 @@ const sendMessageService = async (userId, body) => {
         raw: true,
     });
 
-    
+
     const allParticipantIds = allParticipants.map((p) => p.userId);
     (0, socket_1.emitLastMessageToParticipants)(allParticipantIds, chatId, populatedMessage || newMessage);
     (0, socket_1.emitMessageNotificationToParticipants)(allParticipantIds, userId, chatId, populatedMessage || newMessage);
+
+    const recipientIds = allParticipantIds.filter((participantId) => participantId !== userId);
+    if (recipientIds.length > 0) {
+        const recipients = await models_1.UserModel.findAll({
+            where: { id: recipientIds },
+            attributes: ["id", "fcmToken"],
+            raw: true,
+        });
+        const recipientTokens = recipients
+            .map((recipient) => recipient.fcmToken)
+            .filter(Boolean);
+        const senderRecord = populatedMessage?.sender?.name
+            ? null
+            : await models_1.UserModel.findByPk(userId, { attributes: ["name"], raw: true });
+        const senderName = populatedMessage?.sender?.name || senderRecord?.name || "New message";
+
+        const rawTextContent = (typeof content === "string" && content.trim().length > 0)
+            ? content
+            : (populatedMessage?.content ?? newMessage?.content ?? "");
+        const textContent = String(rawTextContent).trim();
+        const notificationBody = textContent || "You received a new message";
+
+        const pushResult = await (0, firebase_service_1.sendPushToTokens)({
+            tokens: recipientTokens,
+            title: senderName,
+            body: notificationBody,
+            data: {
+                chatId,
+                senderId: userId,
+                type: "new_message",
+                messageId: String(populatedMessage?.id || newMessage.id || ""),
+                senderName: String(senderName || "New message"),
+                messageText: String(notificationBody || "You received a new message"),
+            },
+        });
+
+        if (pushResult.invalidTokens.length > 0) {
+            await models_1.UserModel.update({ fcmToken: null }, {
+                where: {
+                    fcmToken: {
+                        [sequelize_1.Op.in]: pushResult.invalidTokens,
+                    },
+                },
+            });
+        }
+    }
+
+
+
     return {
         userMessage: populatedMessage || newMessage,
         chat,
@@ -172,7 +223,7 @@ const reactToMessageService = async (messageId, userId, emoji) => {
         });
     }
 
-  
+
 
     await message.update({ reactions: nextReactions });
     (0, socket_1.emitMessageReactionUpdated)(chatId, message.id, nextReactions);

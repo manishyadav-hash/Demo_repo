@@ -15,6 +15,9 @@ import {
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import GroupInfoPanel from "./group-info-panel";
+import { useSocket } from "@/hooks/use-socket";
+
+const resolveId = (entity) => entity?._id || entity?.id || null;
 
 const ChatHeader = ({
     chat,
@@ -25,6 +28,7 @@ const ChatHeader = ({
     isLeavingGroup = false,
     typingText = "",
 }) => {
+    const { onlineUsers } = useSocket();
     const navigate = useNavigate();
     const [typingDots, setTypingDots] = useState(0);
     const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
@@ -32,11 +36,12 @@ const ChatHeader = ({
 
     const { name, subheading, avatar, isOnline, isGroup } = getOtherUserAndGroup(
         chat,
-        currentUserId
+        currentUserId,
+        onlineUsers
     );
 
     const otherUser = chat?.participants?.find(
-        (participant) => participant?._id !== currentUserId
+        (participant) => resolveId(participant) !== currentUserId
     );
 
     useEffect(() => {
@@ -189,9 +194,9 @@ const ChatHeader = ({
                     </div>
                 </div>
 
-                {!isGroup && isLocationOpen && otherUser?._id && (
+                {!isGroup && isLocationOpen && resolveId(otherUser) && (
                     <LiveLocationPanel
-                        otherUserId={otherUser._id}
+                        otherUserId={resolveId(otherUser)}
                         currentUserId={currentUserId}
                         otherUserName={name}
                         onClose={() => setIsLocationOpen(false)}

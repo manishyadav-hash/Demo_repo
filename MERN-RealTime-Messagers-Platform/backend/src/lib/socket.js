@@ -17,6 +17,24 @@ let io = null;
 // Example: Map { "user123" => "socket456" }
 const onlineUsers = new Map();
 
+const normalizeSocketIdValue = (value) => {
+    if (value === null || value === undefined)
+        return "";
+    return String(value).trim();
+};
+
+const toPlainMessage = (message) => {
+    if (!message)
+        return message;
+    if (typeof message.toJSON === "function") {
+        return message.toJSON();
+    }
+    if (message.dataValues && typeof message.dataValues === "object") {
+        return { ...message.dataValues };
+    }
+    return message;
+};
+
 // Map tracks active calls between users (prevents duplicate calls)
 // Example: Map { "user1" => "user2", "user2" => "user1" } (bidirectional tracking)
 const activeCalls = new Map();
@@ -567,6 +585,7 @@ exports.emitNewChatToParticpants = emitNewChatToParticpants;
 const emitNewMessageToChatRoom = (senderId, // userId that sent the message
 chatId, message) => {
     const io = getIO();
+    const plainMessage = toPlainMessage(message);
     
     // Get sender's socket ID from online users
     const senderSocketId = onlineUsers.get(senderId?.toString());
@@ -578,11 +597,11 @@ chatId, message) => {
     if (senderSocketId) {
         // Send to everyone in chat EXCEPT sender (prevents echo)
         // .except() excludes specific socket IDs from receiving the event
-        io.to(`chat:${chatId}`).except(senderSocketId).emit("message:new", message);
+        io.to(`chat:${chatId}`).except(senderSocketId).emit("message:new", plainMessage);
     }
     else {
         // If sender is offline (shouldn't happen), send to everyone
-        io.to(`chat:${chatId}`).emit("message:new", message);
+        io.to(`chat:${chatId}`).emit("message:new", plainMessage);
     }
 };
 exports.emitNewMessageToChatRoom = emitNewMessageToChatRoom;
@@ -608,13 +627,22 @@ const emitMessageNotificationToParticipants = (participantIds = [], senderId, ch
     if (!chatId || !message)
         return;
 
+    const plainMessage = toPlainMessage(message);
+    const normalizedSenderId = normalizeSocketIdValue(senderId);
+
     for (const participantId of participantIds) {
-        if (!participantId || participantId === senderId)
+        const normalizedParticipantId = normalizeSocketIdValue(participantId);
+
+        if (!normalizedParticipantId)
             continue;
 
-        io.to(`user:${participantId}`).emit("message:notify", {
+        if (normalizedSenderId && normalizedParticipantId === normalizedSenderId)
+            continue;
+
+        io.to(`user:${normalizedParticipantId}`).emit("message:notify", {
             chatId,
-            message,
+            senderId: normalizedSenderId || plainMessage?.senderId || plainMessage?.sender?.id || plainMessage?.sender?._id,
+            message: plainMessage,
         });
     }
 };

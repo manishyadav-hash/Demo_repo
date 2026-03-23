@@ -14,12 +14,14 @@ import {
 } from "./ui/dropdown-menu";
 import AvatarWithBadge from "./avatar-with-badge";
 import { useNavigate } from "react-router-dom";
+import { useSocket } from "@/hooks/use-socket";
 
 const AsideBar = () => {
   const { user, logout } = useAuth();
+  const { onlineUsers } = useSocket();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const isOnline = isUserOnline(user?._id);
+  const isOnline = isUserOnline(user?._id || user?.id, onlineUsers);
 
   return (
     <aside className="fixed left-1 top-1 bottom-1 z-[9999] flex w-10 flex-col items-center rounded-2xl border border-white/10 bg-card/60 py-3 shadow-lg backdrop-blur-md transition-all hover:bg-card/80 sm:left-2 sm:top-2 sm:bottom-2 sm:w-12 sm:py-4">

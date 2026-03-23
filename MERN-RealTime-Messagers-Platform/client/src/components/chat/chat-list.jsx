@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/use-auth";
 import ChatListHeader from "./chat-list-header";
 import { useSocket } from "@/hooks/use-socket";
 
+const resolveId = (entity) => entity?._id || entity?.id || null;
+
 const ChatList = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -23,7 +25,7 @@ const ChatList = () => {
   } = useChat();
   const { user } = useAuth();
 
-  const currentUserId = user?._id || null;
+  const currentUserId = resolveId(user);
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredChats =
@@ -32,7 +34,7 @@ const ChatList = () => {
         chat.groupName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         chat.participants?.some(
           (p) =>
-            p._id !== currentUserId &&
+            resolveId(p) !== currentUserId &&
             p.name?.toLowerCase().includes(searchQuery.toLowerCase())
         )
     ) || [];

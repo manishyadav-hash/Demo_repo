@@ -5,5 +5,7 @@ const passport_config_1 = require("../config/passport.config");
 const user_controller_1 = require("../controllers/user.controller");
 const userRoutes = (0, express_1.Router)()
     .use(passport_config_1.passportAuthenticateJwt)
+    .post("/notification-token", user_controller_1.saveNotificationTokenController)
+    .delete("/notification-token", user_controller_1.deleteNotificationTokenController)
     .get("/all", user_controller_1.getUsersController);
 exports.default = userRoutes;

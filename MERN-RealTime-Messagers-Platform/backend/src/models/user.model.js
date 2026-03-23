@@ -30,12 +30,23 @@ UserModel.init({
         allowNull: false,
         unique: true,
     },
+
+    phoneNumber: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
     password: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
     avatar: {
         type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
+    fcmToken: {
+        type: sequelize_1.DataTypes.TEXT,
         allowNull: true,
         defaultValue: null,
     },
@@ -61,3 +72,4 @@ UserModel.prototype.comparePassword = async function (value) {
     return (0, bcrypt_1.compareValue)(value, this.password);
 };
 exports.default = UserModel;
+

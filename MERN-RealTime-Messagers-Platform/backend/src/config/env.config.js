@@ -17,4 +17,9 @@ exports.Env = {
     CLOUDINARY_CLOUD_NAME: (0, get_env_1.getEnvOptional)("CLOUDINARY_CLOUD_NAME"),
     CLOUDINARY_API_KEY: (0, get_env_1.getEnvOptional)("CLOUDINARY_API_KEY"),
     CLOUDINARY_API_SECRET: (0, get_env_1.getEnvOptional)("CLOUDINARY_API_SECRET"),
+    // Firebase (optional in local/dev until configured)
+    FIREBASE_PROJECT_ID: (0, get_env_1.getEnvOptional)("FIREBASE_PROJECT_ID"),
+    FIREBASE_CLIENT_EMAIL: (0, get_env_1.getEnvOptional)("FIREBASE_CLIENT_EMAIL"),
+    FIREBASE_PRIVATE_KEY: (0, get_env_1.getEnvOptional)("FIREBASE_PRIVATE_KEY"),
+    FIREBASE_SERVICE_ACCOUNT_PATH: (0, get_env_1.getEnvOptional)("FIREBASE_SERVICE_ACCOUNT_PATH"),
 };

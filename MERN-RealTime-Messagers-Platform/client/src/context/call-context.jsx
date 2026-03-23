@@ -5,11 +5,12 @@ import CallOverlay from "@/components/chat/call-overlay";
 import { useAuth } from "@/hooks/use-auth";
 
 const CallContext = createContext(null);
+const resolveId = (entity) => entity?._id || entity?.id || null;
 
 const CallProvider = ({ children }) => {
     const { socket } = useSocket();
     const { user } = useAuth();
-    const currentUserId = user?._id;
+    const currentUserId = resolveId(user);
 
     // Call State
     const [status, setStatus] = useState("idle"); // idle | calling | ringing | in-call

@@ -4,6 +4,16 @@ import { useAuth } from "@/hooks/use-auth";
 import { useSocket } from "@/hooks/use-socket";
 import { playReceiveSound, primeChatSounds } from "@/lib/chat-sounds";
 
+const getEntityId = (value) => {
+  if (!value || typeof value !== "object") return null;
+  return value._id || value.id || value.userId || value.uuid || value?.dataValues?.id || null;
+};
+
+const normalizeId = (value) => {
+  if (value === null || value === undefined) return null;
+  return String(value).trim();
+};
+
 const getNotificationMessage = (rawMessage) => {
   const base = rawMessage || {};
   const nestedMessage = typeof base?.message === "object" ? base.message : null;
@@ -64,7 +74,13 @@ const getNotificationMessage = (rawMessage) => {
 };
 
 const getMessageSenderId = (message) => {
-  return message?.senderId || message?.sender?._id || message?.sender?.id || null;
+  return (
+    message?.senderId ||
+    message?.sender_id ||
+    getEntityId(message?.sender) ||
+    getEntityId(message?.from) ||
+    null
+  );
 };
 
 const getMessageSenderName = (message) => {
@@ -83,26 +99,55 @@ const getMessageIdentifier = (chatId, message) => {
   );
 };
 
+const showNativeNotification = ({ senderName, messageText, notificationId, senderAvatar, chatId }) => {
+  if (typeof window === "undefined" || !("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+
+  try {
+    const notification = new Notification(senderName || "New message", {
+      body: messageText || "You received a new message",
+      tag: notificationId || `msg-${Date.now()}`,
+      icon: senderAvatar || undefined,
+      renotify: true,
+      data: { chatId },
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      if (chatId) {
+        window.location.href = `/chat/${chatId}`;
+      }
+      notification.close();
+    };
+  } catch (_error) {
+    // Ignore browser notification failures and keep in-app toast behavior.
+  }
+};
+
 const GlobalMessageNotifications = () => {
   const { socket } = useSocket();
   const { user } = useAuth();
   const [notification, setNotification] = useState(null);
   const seenMessageIdsRef = useRef(new Set());
+  const currentUserId = user?._id || user?.id || null;
 
   useEffect(() => {
     primeChatSounds();
   }, []);
 
   useEffect(() => {
-    if (!socket || !user?._id) return;
+    if (!socket || !currentUserId) return;
 
-    const handleMessageNotification = (payload) => {
-      const message = payload?.message || payload?.lastMessage || payload;
+    const handleIncomingMessage = (payload) => {
+      const message = payload?.message || payload?.lastMessage || payload?.userMessage || payload;
       const senderId = getMessageSenderId(message);
+      const normalizedSenderId = normalizeId(senderId);
+      const normalizedCurrentUserId = normalizeId(currentUserId);
 
-      if (!message || !senderId || senderId === user._id) return;
+      if (!message) return;
+      if (normalizedSenderId && normalizedCurrentUserId && normalizedSenderId === normalizedCurrentUserId) return;
 
-      const notificationId = getMessageIdentifier(payload?.chatId, message);
+      const notificationId = getMessageIdentifier(payload?.chatId || message?.chatId, message);
       if (seenMessageIdsRef.current.has(notificationId)) return;
 
       seenMessageIdsRef.current.add(notificationId);
@@ -114,20 +159,36 @@ const GlobalMessageNotifications = () => {
       }
 
       playReceiveSound();
+
+      const notificationMessage = getNotificationMessage(message);
+
+      const isTabHidden = typeof document !== "undefined" && (document.hidden || !document.hasFocus());
+      if (isTabHidden) {
+        showNativeNotification({
+          senderName: getMessageSenderName(message),
+          messageText: notificationMessage,
+          notificationId,
+          senderAvatar: getMessageSenderAvatar(message),
+          chatId: payload?.chatId || message?.chatId,
+        });
+      }
+
       setNotification({
         id: notificationId,
-        message: getNotificationMessage(message),
+        message: notificationMessage,
         senderName: getMessageSenderName(message),
         senderAvatar: getMessageSenderAvatar(message),
       });
     };
 
-    socket.on("message:notify", handleMessageNotification);
+    socket.on("message:notify", handleIncomingMessage);
+    socket.on("message:new", handleIncomingMessage);
 
     return () => {
-      socket.off("message:notify", handleMessageNotification);
+      socket.off("message:notify", handleIncomingMessage);
+      socket.off("message:new", handleIncomingMessage);
     };
-  }, [socket, user]);
+  }, [socket, currentUserId]);
 
   if (!notification) return null;
 

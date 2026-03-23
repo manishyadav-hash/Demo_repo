@@ -1,13 +1,14 @@
 import { format, isToday, isYesterday, isThisWeek } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
-import { useSocket } from "@/hooks/use-socket";
-export const isUserOnline = (userId) => {
+
+const resolveId = (entity) => entity?._id || entity?.id || "";
+
+export const isUserOnline = (userId, onlineUsers = []) => {
     if (!userId)
         return false;
-    const { onlineUsers } = useSocket.getState();
-    return onlineUsers.includes(userId);
+    return onlineUsers.includes(String(userId));
 };
-export const getOtherUserAndGroup = (chat, currentUserId) => {
+export const getOtherUserAndGroup = (chat, currentUserId, onlineUsers = []) => {
     const isGroup = chat?.isGroup;
     if (isGroup) {
         return {
@@ -17,8 +18,9 @@ export const getOtherUserAndGroup = (chat, currentUserId) => {
             isGroup,
         };
     }
-    const other = chat?.participants.find((p) => p._id !== currentUserId);
-    const isOnline = isUserOnline(other?._id ?? "");
+    const normalizedCurrentUserId = String(currentUserId || "");
+    const other = chat?.participants.find((p) => String(resolveId(p)) !== normalizedCurrentUserId);
+    const isOnline = isUserOnline(resolveId(other), onlineUsers);
     return {
         name: other?.name || "Unknown",
         subheading: isOnline ? "Online" : "Offline",
@@ -26,6 +28,7 @@ export const getOtherUserAndGroup = (chat, currentUserId) => {
         isGroup: false,
         isOnline,
         isAI: other?.isAI || false,
+        otherUserId: resolveId(other),
     };
 };
 export const formatChatTime = (date) => {

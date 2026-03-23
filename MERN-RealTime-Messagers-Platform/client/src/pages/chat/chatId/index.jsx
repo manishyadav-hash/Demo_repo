@@ -12,6 +12,9 @@ import { useSocket } from "@/hooks/use-socket";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+const resolveId = (entity) => entity?._id || entity?.id || null;
+
 const SingleChat = () => {
     const chatId = useChatId();
     const navigate = useNavigate();
@@ -21,11 +24,11 @@ const SingleChat = () => {
     const [replyTo, setReplyTo] = useState(null);
     const [typingUserIds, setTypingUserIds] = useState([]);
     const typingTimersRef = useRef({});
-    const currentUserId = user?._id || null;
+    const currentUserId = resolveId(user);
     const chat = singleChat?.chat;
     const messages = singleChat?.messages || [];
-    const otherUser = chat?.participants.find((p) => p._id !== currentUserId);
-    const otherUserId = otherUser?._id || null;
+    const otherUser = chat?.participants.find((p) => resolveId(p) !== currentUserId);
+    const otherUserId = resolveId(otherUser);
     
     const { startCall } = useCallContext();
 
@@ -79,7 +82,7 @@ const SingleChat = () => {
     }, [chatId, socket, currentUserId]);
 
     const typingNames = typingUserIds
-        .map((id) => chat?.participants?.find((p) => p._id === id)?.name)
+        .map((id) => chat?.participants?.find((p) => String(resolveId(p)) === String(id))?.name)
         .filter(Boolean);
     const typingText = typingNames.length === 0
         ? ""

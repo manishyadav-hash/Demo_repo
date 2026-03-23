@@ -5,11 +5,15 @@ import AvatarWithBadge from "../avatar-with-badge";
 import { formatChatTime } from "../../lib/helper";
 import { Button } from "../ui/button";
 import { Trash2 } from "lucide-react";
+import { useSocket } from "@/hooks/use-socket";
+
+const resolveId = (entity) => entity?._id || entity?.id || null;
 
 const ChatListItem = ({ chat, currentUserId, onClick, onDelete }) => {
   const { pathname } = useLocation();
+  const { onlineUsers } = useSocket();
   const { lastMessage, createdAt } = chat;
-  const { name, avatar, isOnline, isGroup } = getOtherUserAndGroup(chat, currentUserId);
+  const { name, avatar, isOnline, isGroup } = getOtherUserAndGroup(chat, currentUserId, onlineUsers);
 
   const getLastMessageText = () => {
     if (!lastMessage) {
@@ -22,7 +26,7 @@ const ChatListItem = ({ chat, currentUserId, onClick, onDelete }) => {
     if (lastMessage.image) return "📷 Photo";
     if (isGroup && lastMessage.sender) {
       return `${
-        lastMessage.sender._id === currentUserId ? "You" : lastMessage.sender.name
+        resolveId(lastMessage.sender) === currentUserId ? "You" : lastMessage.sender.name
       }: ${lastMessage.content}`;
     }
     return lastMessage.content;

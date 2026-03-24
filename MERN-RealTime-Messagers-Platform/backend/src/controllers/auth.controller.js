@@ -43,7 +43,7 @@ exports.sendPhoneOtpController = (0, asyncHandler_middleware_1.asyncHandler)(asy
     const response = await (0, auth_service_1.sendPhoneOtpService)(body);
     return res.status(http_config_1.HTTPSTATUS.OK).json({
         message: "OTP sent successfully",
-        notification: `Your OTP is ${response.otp}`,
+        notification: `Your OTP is ${response.otp}`,  // Template literal for better readablility
         phoneNumber: response.phoneNumber,
     });
 });
@@ -77,4 +77,5 @@ exports.authStatusController = (0, asyncHandler_middleware_1.asyncHandler)(async
         user,
     });
 });
+
 

@@ -26,3 +26,6 @@ dist-ssr
 # Ignore markdown files
 *.md
 !README.md
+
+# Ignore the websocket-example folder
+websocket-example/

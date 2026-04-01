@@ -3,6 +3,7 @@ const auth_validator_1 = require("../validators/auth.validator");
 const auth_service_1 = require("../services/auth.service");
 const cookie_1 = require("../utils/cookie");
 const http_config_1 = require("../config/http.config");
+const redisClient = require('../config/redis.config');
 
 exports.registerController = (0, asyncHandler_middleware_1.asyncHandler)(async (req, res) => {
     const body = auth_validator_1.registerSchema.parse(req.body);
@@ -35,6 +36,7 @@ exports.loginController = (0, asyncHandler_middleware_1.asyncHandler)(async (req
     });
 });
 
+
 exports.sendPhoneOtpController = (0, asyncHandler_middleware_1.asyncHandler)(async (req, res) => {
     const body = auth_validator_1.sendPhoneOtpSchema.parse(req.body);
     const response = await (0, auth_service_1.sendPhoneOtpService)(body);
@@ -44,6 +46,7 @@ exports.sendPhoneOtpController = (0, asyncHandler_middleware_1.asyncHandler)(asy
         phoneNumber: response.phoneNumber,
     });
 });
+
 
 exports.verifyPhoneOtpController = (0, asyncHandler_middleware_1.asyncHandler)(async (req, res) => {
     const body = auth_validator_1.verifyPhoneOtpSchema.parse(req.body);
@@ -74,5 +77,27 @@ exports.authStatusController = (0, asyncHandler_middleware_1.asyncHandler)(async
         user,
     });
 });
+
+// Example: Cache user session
+const cacheUserSession = async (userId, sessionData) => {
+  try {
+    await redisClient.set(`user:${userId}`, JSON.stringify(sessionData), {
+      EX: 3600, // Expire in 1 hour
+    });
+    console.log('Session cached in Redis');
+  } catch (err) {
+    console.error('Error caching session:', err);
+  }
+};
+
+const getUserSession = async (userId) => {
+  try {
+    const session = await redisClient.get(`user:${userId}`);
+    return session ? JSON.parse(session) : null;
+  } catch (err) {
+    console.error('Error retrieving session:', err);
+    return null;
+  }
+};
 
 
